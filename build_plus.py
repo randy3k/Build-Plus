@@ -15,7 +15,7 @@ def getSysPath():
 
 def getenv():
     my_env = os.environ.copy()
-    my_env["PATH"] = getSysPath()
+    my_env["PATH"] = getSysPath() + ":" + my_env["PATH"]
     my_env["LANG"] = "en_US.UTF-8"
     return my_env
 

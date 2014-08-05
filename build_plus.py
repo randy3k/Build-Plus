@@ -2,22 +2,16 @@ import sublime, sublime_plugin
 import subprocess, os
 
 # https://github.com/int3h/SublimeFixMacPath/blob/master/FixPath.py
-def getSysPath():
-    command = "/usr/bin/login -fpql $USER $SHELL -l -c 'echo -n $PATH'"
+def sys_env(var):
+    command = "/usr/bin/login -fpql $USER $SHELL -l -c 'echo -n $" + var+ "'"
+    output = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True).communicate()[0]
+    return output.decode("utf-8")
 
-    # Execute command with original environ. Otherwise, our changes to the PATH propogate down to
-    # the shell we spawn, which re-adds the system path & returns it, leading to duplicate values.
-    sysPath = subprocess.Popen(command, stdout=subprocess.PIPE,
-        shell=True).stdout.read()
-
-    # Decode the byte array into a string, remove trailing whitespace, remove trailing ':'
-    return sysPath.decode("utf-8").rstrip().rstrip(':')
-
-def getenv():
-    my_env = os.environ.copy()
-    my_env["PATH"] = getSysPath() + ":" + my_env["PATH"]
-    my_env["LANG"] = "en_US.UTF-8"
-    return my_env
+def my_env():
+    env = os.environ.copy()
+    env["PATH"] = sys_env("PATH")
+    env["LANG"] = sys_env("LANG")
+    return env
 
 class BuildPlusCommand(sublime_plugin.WindowCommand):
     def run(self):
@@ -34,9 +28,9 @@ class BuildPlusCommand(sublime_plugin.WindowCommand):
 
         cmd = cmd.strip().replace("\n", "")
         if not cmd: return
-        # print(cmd)
+        
         p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=getenv())
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env())
         (output, err) = p.communicate()
         p.wait()
         os.chdir(old_dir)
